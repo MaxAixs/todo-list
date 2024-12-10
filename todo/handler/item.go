@@ -1,6 +1,8 @@
-package todo
+package handler
 
-import "net/http"
+import (
+	"net/http"
+)
 
 func (h *Handler) CreateItem(w http.ResponseWriter, r *http.Request) {}
 func (h *Handler) DeleteItem(w http.ResponseWriter, r *http.Request) {}

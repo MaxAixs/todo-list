@@ -1,6 +1,8 @@
-package todo
+package handler
 
-import "net/http"
+import (
+	"net/http"
+)
 
 func (h *Handler) CreateList(w http.ResponseWriter, r *http.Request)  {}
 func (h *Handler) GetList(w http.ResponseWriter, r *http.Request)     {}

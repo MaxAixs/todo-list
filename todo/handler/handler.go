@@ -1,4 +1,4 @@
-package todo
+package handler
 
 import (
 	"github.com/gorilla/mux"

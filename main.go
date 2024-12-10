@@ -6,7 +6,8 @@ import (
 	"os"
 	"os/signal"
 	"time"
-	"todo-list/todo"
+	"todo-list/cmd/server"
+	"todo-list/todo/handler"
 )
 
 func main() {
@@ -16,11 +17,11 @@ func main() {
 		logrus.Printf("SERVER_PORT not set, using default %s", port)
 	}
 
-	srv := new(todo.)
-	handler := &todo.Handler{}
+	srv := &server.Server{}
+	h := &handler.Handler{}
 
 	go func() {
-		if err := srv.RunServer(port, handler.MapRoutes()); err != nil {
+		if err := srv.RunServer(port, h.MapRoutes()); err != nil {
 			logrus.Fatalf("cant run server: %s", err)
 		}
 	}()
