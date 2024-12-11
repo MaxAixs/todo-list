@@ -5,28 +5,29 @@ import (
 	"time"
 )
 
+// User represents a user model
+// swagger:model
 type User struct {
-	Id        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	Password  string    `json:"-"`
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name" validate:"required,min=3,max=50"`
+	Email     string    `json:"email" validate:"required,email"`
+	Password  string    `json:"password" validate:"required,min=6"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type TodoList struct {
-	Id          int       `json:"id"`
+	ID          int       `json:"id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description,omitempty"`
 	Public      bool      `json:"public"`
-	UserId      int       `json:"user_id"`
-	User        *User     `json:"user,omitempty"`
+	UserID      uuid.UUID `json:"user_id"`
 	CreatedAt   time.Time `json:"created_at,omitempty"`
 	UpdatedAt   time.Time `json:"updated_at,omitempty"`
 }
 
 type TodoItem struct {
-	Id          int       `json:"id"`
+	ID          int       `json:"id"`
 	Description string    `json:"description"`
 	Done        bool      `json:"done"`
 	DueDate     time.Time `json:"due_date,omitempty"`
@@ -36,11 +37,26 @@ type TodoItem struct {
 }
 
 type UserList struct {
-	UserID int `json:"user_id"`
-	ListID int `json:"list_id"`
+	UserID uuid.UUID `json:"user_id"`
+	ListID int       `json:"list_id"`
 }
 
 type ListItem struct {
 	TodoID int `json:"todo_id"`
 	ItemID int `json:"item_id"`
+}
+
+type UpdateListInput struct {
+	Title       *string `json:"title"`
+	Description *string `json:"description"`
+	Public      *bool   `json:"public"`
+	UpdatedAt   *string `json:"updated_at"`
+}
+
+type UpdateItemInput struct {
+	Description *string `json:"description"`
+	Done        *bool   `json:"done"`
+	DueDate     *string `json:"due_date"`
+	Priority    *int    `json:"priority"`
+	UpdatedAt   *string `json:"updated_at"`
 }

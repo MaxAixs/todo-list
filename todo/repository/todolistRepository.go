@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/google/uuid"
+	"strings"
 	"todo-list/todo"
 )
 
@@ -15,22 +16,22 @@ func NewTodoListRepository(db *sql.DB) *TodoListRepository {
 	return &TodoListRepository{db: db}
 }
 
-func (t *TodoListRepository) CreateList(UserID uuid.UUID, list todo.TodoList) (int, error) {
+func (t *TodoListRepository) CreateList(userID uuid.UUID, list todo.TodoList) (int, error) {
 	tx, err := t.db.Begin()
 	if err != nil {
 		return 0, err
 	}
 
 	var listID int
-	createListQuery := `INSERT INTO todo_lists (title, description,public,user_id) VALUES ($1, $2, $3, $4) returning id`
-	row := tx.QueryRow(createListQuery, list.Title, list.Description, list.Public, UserID)
+	createListQuery := `INSERT INTO todo_lists (title,description,public,user_id) VALUES ($1, $2, $3, $4) returning id`
+	row := tx.QueryRow(createListQuery, list.Title, list.Description, list.Public, userID)
 	if err := row.Scan(&listID); err != nil {
 		tx.Rollback()
 		return 0, fmt.Errorf("cant creating todo_list: %w", err)
 	}
 
-	createUsersListQuery := `INSERT INTO users_lists (user_id, list_id) VALUES ($1, $2)`
-	_, err = tx.Exec(createUsersListQuery, UserID, listID)
+	createUsersListQuery := `INSERT INTO user_lists (user_id, list_id) VALUES ($1, $2)`
+	_, err = tx.Exec(createUsersListQuery, userID, listID)
 	if err != nil {
 		tx.Rollback()
 		return 0, fmt.Errorf("error creating users_lists: %w", err)
@@ -39,9 +40,9 @@ func (t *TodoListRepository) CreateList(UserID uuid.UUID, list todo.TodoList) (i
 	return listID, tx.Commit()
 }
 
-func (t *TodoListRepository) DeleteList(UserID uuid.UUID, list todo.TodoList) error {
+func (t *TodoListRepository) DeleteListById(userID uuid.UUID, listID int) error {
 	deleteListQuery := `DELETE FROM todo_lists WHERE  id = $1 AND user_id = $2`
-	_, err := t.db.Exec(deleteListQuery, list.ID, UserID)
+	_, err := t.db.Exec(deleteListQuery, listID, userID)
 	if err != nil {
 		return fmt.Errorf("error deleting todo_list: %w", err)
 	}
@@ -52,7 +53,7 @@ func (t *TodoListRepository) DeleteList(UserID uuid.UUID, list todo.TodoList) er
 func (t *TodoListRepository) GetListById(userID uuid.UUID, listID int) (*todo.TodoList, error) {
 	var list todo.TodoList
 
-	getListByIdQuery := `SELECT tl.id, tl.title, tl.description, tl.public, tl.user_id, tl.created_at, tl.updated_at FROM todo_lists tl INNER JOIN users_lists ul ON tl.id = ul.list_id WHERE ul.list_id = $1 AND ul.user_id = $2`
+	getListByIdQuery := `SELECT tl.id, tl.title, tl.description, tl.public, tl.user_id, tl.created_at, tl.updated_at FROM todo_lists tl INNER JOIN user_lists ul ON tl.id = ul.list_id WHERE ul.list_id = $1 AND ul.user_id = $2`
 	row := t.db.QueryRow(getListByIdQuery, listID, userID)
 	if err := row.Scan(&list.ID, &list.Title, &list.Description, &list.Public, &list.UserID, &list.CreatedAt, &list.UpdatedAt); err != nil {
 		return nil, fmt.Errorf("error getting todo_list: %w", err)
@@ -61,9 +62,9 @@ func (t *TodoListRepository) GetListById(userID uuid.UUID, listID int) (*todo.To
 	return &list, nil
 }
 
-func (t *TodoListRepository) GetAllList(userID uuid.UUID) ([]todo.TodoList, error) {
+func (t *TodoListRepository) GetAllLists(userID uuid.UUID) ([]todo.TodoList, error) {
 	var lists []todo.TodoList
-	getAllListQuery := `SELECT tl.id, tl.title, tl.description, tl.public, tl.user_id, tl.created_at, tl.updated_at  FROM todo_lists tl INNER JOIN users_lists ul ON tl.id = ul.list_id WHERE ul.user_id = $1`
+	getAllListQuery := `SELECT tl.id, tl.title, tl.description, tl.public, tl.user_id, tl.created_at, tl.updated_at  FROM todo_lists tl INNER JOIN user_lists ul ON tl.id = ul.list_id WHERE ul.user_id = $1`
 	rows, err := t.db.Query(getAllListQuery, userID)
 	if err != nil {
 		return nil, fmt.Errorf("error getting todo_lists: %w", err)
@@ -81,6 +82,39 @@ func (t *TodoListRepository) GetAllList(userID uuid.UUID) ([]todo.TodoList, erro
 	return lists, nil
 }
 
-func (t *TodoListRepository) UpdateList(UserID uuid.UUID, list todo.TodoList) error {
+func (t *TodoListRepository) UpdateList(userID uuid.UUID, listID int, input todo.UpdateListInput) error {
+	setValues := make([]string, 0)
+	args := make([]interface{}, 0)
+	argId := 1
+
+	if input.Title != nil {
+		setValues = append(setValues, fmt.Sprintf("title=$%d", argId))
+		args = append(args, *input.Title)
+		argId++
+	}
+
+	if input.Description != nil {
+		setValues = append(setValues, fmt.Sprintf("description=$%d", argId))
+		args = append(args, *input.Description)
+		argId++
+	}
+
+	if input.Public != nil {
+		setValues = append(setValues, fmt.Sprintf("public=$%d", argId))
+		args = append(args, *input.Public)
+		argId++
+	}
+
+	setValues = append(setValues, "updated_at=NOW()")
+
+	setQuery := strings.Join(setValues, ", ")
+	query := fmt.Sprintf("UPDATE todo_lists tl SET %s FROM user_lists ul WHERE tl.id = ul.list_id AND ul.list_id = $%d AND ul.user_id = $%d", setQuery, argId, argId+1)
+	args = append(args, listID, userID)
+
+	_, err := t.db.Exec(query, args...)
+	if err != nil {
+		return fmt.Errorf("error updating todo_list: %w", err)
+	}
+
 	return nil
 }

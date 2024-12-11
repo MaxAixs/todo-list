@@ -1,30 +1,85 @@
 package handler
 
 import (
+	"errors"
 	"github.com/gorilla/mux"
+	httpSwagger "github.com/swaggo/http-swagger"
+	"net/http"
+	"strconv"
+	_ "todo-list/docs"
+	"todo-list/todo/service"
 )
 
-type Handler struct{}
+type Handler struct {
+	services *service.Service
+}
+
+func NewHandler(services *service.Service) *Handler {
+	return &Handler{services: services}
+}
 
 func (h *Handler) MapRoutes() *mux.Router {
 	router := mux.NewRouter()
 
+	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+
 	// Authentication routes
-	router.HandleFunc("/auth/sign-up", h.signUp).Methods("POST")
-	router.HandleFunc("/auth/sign-in", h.signIn).Methods("POST")
+	auth := router.PathPrefix("/auth").Subrouter()
+	auth.HandleFunc("/sign-up", h.signUp).Methods("POST")
+	auth.HandleFunc("/sign-in", h.signIn).Methods("POST")
 
-	// List routes
-	router.HandleFunc("/lists", h.CreateList).Methods("POST")
-	router.HandleFunc("/lists", h.GetAllLists).Methods("GET")
-	router.HandleFunc("/lists/{id}", h.GetList).Methods("GET")
-	router.HandleFunc("/lists/{id}", h.UpdateList).Methods("PUT")
-	router.HandleFunc("/lists/{id}", h.DeleteList).Methods("DELETE")
+	api := router.PathPrefix("/api").Subrouter()
+	api.Use(h.AuthMiddleware)
+	{
+		// List routes
+		lists := api.PathPrefix("/lists").Subrouter()
+		lists.HandleFunc("/", h.CreateList).Methods("POST")
+		lists.HandleFunc("/", h.GetAllLists).Methods("GET")
+		lists.HandleFunc("/{id}", h.GetList).Methods("GET")
+		lists.HandleFunc("/{id}", h.UpdateList).Methods("PUT")
+		lists.HandleFunc("/{id}", h.DeleteList).Methods("DELETE")
 
-	// Item routes
-	router.HandleFunc("/lists/{id}/items", h.CreateItem).Methods("POST")
-	router.HandleFunc("/items/{id}", h.GetItem).Methods("GET")
-	router.HandleFunc("/items/{id}", h.UpdateItem).Methods("PUT")
-	router.HandleFunc("/items/{id}", h.DeleteItem).Methods("DELETE")
+		// Items routes within lists
+		items := lists.PathPrefix("/{id}/items").Subrouter()
+		items.HandleFunc("/", h.CreateItem).Methods("POST")
+		items.HandleFunc("/", h.GetItems).Methods("GET")
+
+		// Items routes
+		itemsRoutes := api.PathPrefix("/items").Subrouter()
+		itemsRoutes.HandleFunc("/{id}", h.GetItemById).Methods("GET")
+		itemsRoutes.HandleFunc("/{id}", h.UpdateItem).Methods("PUT")
+		itemsRoutes.HandleFunc("/{id}", h.DeleteItem).Methods("DELETE")
+	}
 
 	return router
+}
+
+func GetListID(r *http.Request) (int, error) {
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok || id == "" {
+		return 0, errors.New("list ID not provided in URL")
+	}
+
+	listID, err := strconv.Atoi(id)
+	if err != nil {
+		return 0, errors.New("invalid ID")
+	}
+
+	return listID, nil
+}
+
+func GetItemID(r *http.Request) (int, error) {
+	vars := mux.Vars(r)
+	id, ok := vars["id"]
+	if !ok || id == "" {
+		return 0, errors.New("item ID not provided in URL")
+	}
+
+	itemID, err := strconv.Atoi(id)
+	if err != nil {
+		return 0, errors.New("invalid item ID")
+	}
+
+	return itemID, nil
 }
