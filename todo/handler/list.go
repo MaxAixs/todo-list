@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"todo-list/todo"
 )
@@ -24,8 +23,7 @@ func (h *Handler) CreateList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var input todo.TodoList
-	err = json.NewDecoder(r.Body).Decode(&input)
-	if handleError(w, err, http.StatusBadRequest, "failed to parse request body") {
+	if err := parseJSONBody(w, r, &input); err != nil {
 		return
 	}
 
@@ -91,8 +89,7 @@ func (h *Handler) UpdateList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var input todo.UpdateListInput
-	err = json.NewDecoder(r.Body).Decode(&input)
-	if handleError(w, err, http.StatusBadRequest, "failed to parse request body") {
+	if err := parseJSONBody(w, r, &input); err != nil {
 		return
 	}
 

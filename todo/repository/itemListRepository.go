@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/google/uuid"
-	"strings"
 	"todo-list/todo"
 )
 
@@ -21,20 +20,19 @@ func (l *ListItemRepository) CreateItem(todoID int, todoItems todo.TodoItem) (in
 	if err != nil {
 		return 0, err
 	}
+	defer tx.Rollback()
 
 	var itemID int
 	createItemQuery := `INSERT INTO todo_items (description,done) VALUES ($1, $2) returning id`
 	row := tx.QueryRow(createItemQuery, todoItems.Description, todoItems.Done)
 	err = row.Scan(&itemID)
 	if err != nil {
-		tx.Rollback()
 		return 0, fmt.Errorf("cant create todo_items %w", err)
 	}
 
 	createListItemQuery := `INSERT INTO list_items (todo_id, item_id) VALUES ($1, $2)`
 	_, err = tx.Exec(createListItemQuery, todoID, itemID)
 	if err != nil {
-		tx.Rollback()
 		return 0, fmt.Errorf("cant create list_items %w", err)
 	}
 
@@ -50,6 +48,7 @@ func (l *ListItemRepository) DeleteItem(UserID uuid.UUID, itemID int) error {
 
 	return nil
 }
+
 func (l *ListItemRepository) GetItemById(userID uuid.UUID, itemID int) (*todo.TodoItem, error) {
 	var item todo.TodoItem
 	getItemById := `SELECT ti.id, ti.description, ti.done, ti.priority FROM todo_items ti INNER JOIN list_items li on li.item_id = ti.id INNER JOIN user_lists ul on ul.list_id = li.todo_id WHERE  ti.id = $1 AND ul.user_id = $2`
@@ -61,6 +60,7 @@ func (l *ListItemRepository) GetItemById(userID uuid.UUID, itemID int) (*todo.To
 	return &item, nil
 
 }
+
 func (l *ListItemRepository) GetAllItems(userID uuid.UUID, listID int) ([]todo.TodoItem, error) {
 	var items []todo.TodoItem
 
@@ -88,49 +88,23 @@ func (l *ListItemRepository) GetAllItems(userID uuid.UUID, listID int) ([]todo.T
 	return items, nil
 }
 
-func (l *ListItemRepository) UpdateItem(userID uuid.UUID, itemID int, item todo.UpdateItemInput) error {
-	setValues := make([]string, 0)
-	args := make([]interface{}, 0)
-	argId := 1
+func (l *ListItemRepository) UpdateItem(userID uuid.UUID, itemID int, input todo.UpdateItemInput) error {
+	setQuery, args := buildItemUpdateSet(userID, itemID, input)
 
-	if item.Description != nil {
-		setValues = append(setValues, fmt.Sprintf("description = $%d", argId))
-		args = append(args, *item.Description)
-		argId++
-	}
-
-	if item.Done != nil {
-		setValues = append(setValues, fmt.Sprintf("done = $%d", argId))
-		args = append(args, *item.Done)
-		argId++
-	}
-
-	if item.DueDate != nil {
-		setValues = append(setValues, fmt.Sprintf("due_date = $%d", argId))
-		args = append(args, *item.DueDate)
-		argId++
-	}
-
-	if item.Priority != nil {
-		setValues = append(setValues, fmt.Sprintf("priority = $%d", argId))
-		args = append(args, *item.Priority)
-		argId++
-	}
-
-	setValues = append(setValues, "updated_at=NOW()")
-
-	setQuery := strings.Join(setValues, ", ")
 	query := fmt.Sprintf(`
-	UPDATE todo_items ti 
-	SET %s 
-	FROM list_items li, user_lists ul 
-	WHERE ti.id = li.item_id 
-		AND li.todo_id = ul.list_id 
-		AND ul.user_id = $%d 
-		AND ti.id = $%d
-`, setQuery, argId, argId+1)
+		UPDATE todo_items ti 
+		SET %s 
+		FROM list_items li, user_lists ul 
+		WHERE ti.id = li.item_id 
+		  AND li.todo_id = ul.list_id 
+		  AND ul.user_id = $%d 
+		  AND ti.id = $%d
+	`, setQuery, len(args)-1, len(args))
 
-	args = append(args, userID, itemID)
 	_, err := l.db.Exec(query, args...)
-	return err
+	if err != nil {
+		return fmt.Errorf("error updating todo_item: %w", err)
+	}
+
+	return nil
 }

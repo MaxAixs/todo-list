@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/google/uuid"
-	"strings"
 	"todo-list/todo"
 )
 
@@ -21,19 +20,18 @@ func (t *TodoListRepository) CreateList(userID uuid.UUID, list todo.TodoList) (i
 	if err != nil {
 		return 0, err
 	}
+	defer tx.Rollback()
 
 	var listID int
 	createListQuery := `INSERT INTO todo_lists (title,description,public,user_id) VALUES ($1, $2, $3, $4) returning id`
 	row := tx.QueryRow(createListQuery, list.Title, list.Description, list.Public, userID)
 	if err := row.Scan(&listID); err != nil {
-		tx.Rollback()
 		return 0, fmt.Errorf("cant creating todo_list: %w", err)
 	}
 
 	createUsersListQuery := `INSERT INTO user_lists (user_id, list_id) VALUES ($1, $2)`
 	_, err = tx.Exec(createUsersListQuery, userID, listID)
 	if err != nil {
-		tx.Rollback()
 		return 0, fmt.Errorf("error creating users_lists: %w", err)
 	}
 
@@ -83,33 +81,16 @@ func (t *TodoListRepository) GetAllLists(userID uuid.UUID) ([]todo.TodoList, err
 }
 
 func (t *TodoListRepository) UpdateList(userID uuid.UUID, listID int, input todo.UpdateListInput) error {
-	setValues := make([]string, 0)
-	args := make([]interface{}, 0)
-	argId := 1
+	setQuery, args := buildListUpdateSet(userID, listID, input)
 
-	if input.Title != nil {
-		setValues = append(setValues, fmt.Sprintf("title=$%d", argId))
-		args = append(args, *input.Title)
-		argId++
-	}
-
-	if input.Description != nil {
-		setValues = append(setValues, fmt.Sprintf("description=$%d", argId))
-		args = append(args, *input.Description)
-		argId++
-	}
-
-	if input.Public != nil {
-		setValues = append(setValues, fmt.Sprintf("public=$%d", argId))
-		args = append(args, *input.Public)
-		argId++
-	}
-
-	setValues = append(setValues, "updated_at=NOW()")
-
-	setQuery := strings.Join(setValues, ", ")
-	query := fmt.Sprintf("UPDATE todo_lists tl SET %s FROM user_lists ul WHERE tl.id = ul.list_id AND ul.list_id = $%d AND ul.user_id = $%d", setQuery, argId, argId+1)
-	args = append(args, listID, userID)
+	query := fmt.Sprintf(`
+		UPDATE todo_lists tl 
+		SET %s 
+		FROM user_lists ul 
+		WHERE tl.id = ul.list_id 
+		  AND ul.user_id = $%d 
+		  AND ul.list_id = $%d
+	`, setQuery, len(args)-1, len(args))
 
 	_, err := t.db.Exec(query, args...)
 	if err != nil {

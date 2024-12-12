@@ -1,11 +1,8 @@
 package handler
 
 import (
-	"errors"
 	"github.com/gorilla/mux"
 	httpSwagger "github.com/swaggo/http-swagger"
-	"net/http"
-	"strconv"
 	_ "todo-list/docs"
 	"todo-list/todo/service"
 )
@@ -52,34 +49,4 @@ func (h *Handler) MapRoutes() *mux.Router {
 	}
 
 	return router
-}
-
-func GetListID(r *http.Request) (int, error) {
-	vars := mux.Vars(r)
-	id, ok := vars["id"]
-	if !ok || id == "" {
-		return 0, errors.New("list ID not provided in URL")
-	}
-
-	listID, err := strconv.Atoi(id)
-	if err != nil {
-		return 0, errors.New("invalid ID")
-	}
-
-	return listID, nil
-}
-
-func GetItemID(r *http.Request) (int, error) {
-	vars := mux.Vars(r)
-	id, ok := vars["id"]
-	if !ok || id == "" {
-		return 0, errors.New("item ID not provided in URL")
-	}
-
-	itemID, err := strconv.Atoi(id)
-	if err != nil {
-		return 0, errors.New("invalid item ID")
-	}
-
-	return itemID, nil
 }

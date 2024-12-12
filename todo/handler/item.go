@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"todo-list/todo"
 )
@@ -30,8 +29,7 @@ func (h *Handler) CreateItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var input todo.TodoItem
-	err = json.NewDecoder(r.Body).Decode(&input)
-	if handleError(w, err, http.StatusBadRequest, "invalid input param") {
+	if err := parseJSONBody(w, r, &input); err != nil {
 		return
 	}
 
@@ -157,8 +155,7 @@ func (h *Handler) UpdateItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var input todo.UpdateItemInput
-	err = json.NewDecoder(r.Body).Decode(&input)
-	if handleError(w, err, http.StatusBadRequest, "invalid input param") {
+	if err := parseJSONBody(w, r, &input); err != nil {
 		return
 	}
 
