@@ -18,12 +18,12 @@ import (
 // @Failure      500      {object}  ErrorResponse
 // @Router       /lists/{listID}/items [post]
 func (h *Handler) CreateItem(w http.ResponseWriter, r *http.Request) {
-	userID, err := GetUserID(r.Context())
+	userID, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
 		return
 	}
 
-	listID, err := GetListID(r)
+	listID, err := getListID(r)
 	if handleError(w, err, http.StatusBadRequest, "invalid list id param") {
 		return
 	}
@@ -53,12 +53,12 @@ func (h *Handler) CreateItem(w http.ResponseWriter, r *http.Request) {
 // @Failure      500      {object}  ErrorResponse
 // @Router       /items/{itemID} [delete]
 func (h *Handler) DeleteItem(w http.ResponseWriter, r *http.Request) {
-	userID, err := GetUserID(r.Context())
+	userID, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
 		return
 	}
 
-	itemID, err := GetItemID(r)
+	itemID, err := getItemID(r)
 	if handleError(w, err, http.StatusBadRequest, "invalid list id param") {
 		return
 	}
@@ -83,12 +83,12 @@ func (h *Handler) DeleteItem(w http.ResponseWriter, r *http.Request) {
 // @Failure      500      {object}  ErrorResponse
 // @Router       /lists/{listID}/items [get]
 func (h *Handler) GetItems(w http.ResponseWriter, r *http.Request) {
-	userID, err := GetUserID(r.Context())
+	userID, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
 		return
 	}
 
-	listID, err := GetListID(r)
+	listID, err := getListID(r)
 	if handleError(w, err, http.StatusBadRequest, "invalid list id param") {
 		return
 	}
@@ -113,12 +113,12 @@ func (h *Handler) GetItems(w http.ResponseWriter, r *http.Request) {
 // @Failure      500      {object}  ErrorResponse
 // @Router       /items/{itemID} [get]
 func (h *Handler) GetItemById(w http.ResponseWriter, r *http.Request) {
-	userID, err := GetUserID(r.Context())
+	userID, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
 		return
 	}
 
-	itemID, err := GetItemID(r)
+	itemID, err := getItemID(r)
 	if handleError(w, err, http.StatusBadRequest, "invalid list id params") {
 		return
 	}
@@ -144,12 +144,12 @@ func (h *Handler) GetItemById(w http.ResponseWriter, r *http.Request) {
 // @Failure      500      {object}  ErrorResponse
 // @Router       /items/{itemID} [put]
 func (h *Handler) UpdateItem(w http.ResponseWriter, r *http.Request) {
-	userID, err := GetUserID(r.Context())
+	userID, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
 		return
 	}
 
-	itemID, err := GetItemID(r)
+	itemID, err := getItemID(r)
 	if handleError(w, err, http.StatusBadRequest, "invalid list id param") {
 		return
 	}

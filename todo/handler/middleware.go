@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"errors"
-	"github.com/google/uuid"
 	"net/http"
 	"strings"
 )
@@ -11,25 +10,17 @@ import (
 func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		header := r.Header.Get("Authorization")
-		if header == "" {
-			newErrorResponse(w, "empty auth header", http.StatusUnauthorized, "Authorization token is missing")
-			return
+
+		token, err := getTokenFromHeader(header)
+		if err != nil {
+			newErrorResponse(w, err.Error(), http.StatusUnauthorized, "cant get token from header")
 		}
 
-		headerParts := strings.Split(header, " ")
-		if len(headerParts) != 2 || headerParts[0] != "Bearer" {
-			newErrorResponse(w, "invalid auth header", http.StatusUnauthorized, "Authorization token is invalid")
-			return
-		}
-
-		if len(headerParts[1]) == 0 {
-			newErrorResponse(w, "token is empty", http.StatusUnauthorized, "Authorization token is missing")
-		}
-
-		userID, err := h.services.ParseToken(headerParts[1])
+		userID, err := h.services.ParseToken(token)
 		{
 			if err != nil {
 				newErrorResponse(w, err.Error(), http.StatusUnauthorized, "")
+				return
 			}
 		}
 
@@ -40,11 +31,21 @@ func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func GetUserID(ctx context.Context) (uuid.UUID, error) {
-	userID, ok := ctx.Value("userID").(uuid.UUID)
-	if !ok || userID == uuid.Nil {
-		return uuid.Nil, errors.New("user ID not found in context")
+func getTokenFromHeader(header string) (string, error) {
+	if header == "" {
+		return "", errors.New("authorization token is missing")
 	}
 
-	return userID, nil
+	headerParts := strings.Split(header, " ")
+
+	if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+		return "", errors.New("authorization token is invalid")
+	}
+
+	if len(headerParts[1]) == 0 {
+		return "", errors.New("token is missing")
+	}
+
+	return headerParts[1], nil
+
 }

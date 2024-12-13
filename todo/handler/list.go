@@ -17,7 +17,7 @@ import (
 // @Failure      500      {object}  ErrorResponse
 // @Router       /lists [post]
 func (h *Handler) CreateList(w http.ResponseWriter, r *http.Request) {
-	id, err := GetUserID(r.Context())
+	id, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
 		return
 	}
@@ -47,12 +47,12 @@ func (h *Handler) CreateList(w http.ResponseWriter, r *http.Request) {
 // @Failure      500      {object}  ErrorResponse
 // @Router       /lists/{listID} [get]
 func (h *Handler) GetList(w http.ResponseWriter, r *http.Request) {
-	userID, err := GetUserID(r.Context())
+	userID, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
 		return
 	}
 
-	listID, err := GetListID(r)
+	listID, err := getListID(r)
 	if handleError(w, err, http.StatusBadRequest, "list ID is empty") {
 		return
 	}
@@ -78,12 +78,12 @@ func (h *Handler) GetList(w http.ResponseWriter, r *http.Request) {
 // @Failure      500      {object}  ErrorResponse
 // @Router       /lists/{listID} [put]
 func (h *Handler) UpdateList(w http.ResponseWriter, r *http.Request) {
-	userID, err := GetUserID(r.Context())
+	userID, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
 		return
 	}
 
-	listID, err := GetListID(r)
+	listID, err := getListID(r)
 	if handleError(w, err, http.StatusBadRequest, "list ID is empty") {
 		return
 	}
@@ -113,12 +113,12 @@ func (h *Handler) UpdateList(w http.ResponseWriter, r *http.Request) {
 // @Failure      500      {object}  ErrorResponse
 // @Router       /lists/{listID} [delete]
 func (h *Handler) DeleteList(w http.ResponseWriter, r *http.Request) {
-	userID, err := GetUserID(r.Context())
+	userID, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
 		return
 	}
 
-	listID, err := GetListID(r)
+	listID, err := getListID(r)
 	if handleError(w, err, http.StatusBadRequest, "list ID is empty") {
 		return
 	}
@@ -142,7 +142,7 @@ func (h *Handler) DeleteList(w http.ResponseWriter, r *http.Request) {
 // @Failure      500      {object}  ErrorResponse
 // @Router       /lists [get]
 func (h *Handler) GetAllLists(w http.ResponseWriter, r *http.Request) {
-	id, err := GetUserID(r.Context())
+	id, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
 		return
 	}
