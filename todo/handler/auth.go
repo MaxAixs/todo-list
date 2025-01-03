@@ -19,6 +19,10 @@ import (
 // @Failure      500    {object}  ErrorResponse
 // @Router       /auth/sign-up [post]
 func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
+	if !checkContentType(w, r) {
+		return
+	}
+
 	var input todo.User
 
 	if err := parseJSONBody(w, r, &input); err != nil {
@@ -31,7 +35,7 @@ func (h *Handler) signUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id, err := h.services.Authorization.AuthUser(input)
-	if handleError(w, err, http.StatusInternalServerError, "cant create user") {
+	if handleError(w, err, http.StatusInternalServerError, "User creation failed due to internal server error") {
 		return
 	}
 
@@ -54,6 +58,7 @@ func handleValidationError(err error) string {
 	for _, e := range err.(validator.ValidationErrors) {
 		errorMessages = append(errorMessages, fmt.Sprintf("Field '%s' failed validation for '%s' tag", e.Field(), e.Tag()))
 	}
+
 	return strings.Join(errorMessages, ", ")
 }
 
@@ -69,14 +74,23 @@ func handleValidationError(err error) string {
 // @Failure      500    {object}  ErrorResponse
 // @Router       /auth/sign-in [post]
 func (h *Handler) signIn(w http.ResponseWriter, r *http.Request) {
+	if !checkContentType(w, r) {
+		return
+	}
+
 	var input todo.User
 
 	if err := parseJSONBody(w, r, &input); err != nil {
 		return
 	}
 
+	err := validateUser(input)
+	if handleError(w, err, http.StatusBadRequest, "failed validation user") {
+		return
+	}
+
 	token, err := h.services.Authorization.GenerateToken(input.Email, input.Password)
-	if handleError(w, err, http.StatusInternalServerError, "cant create token") {
+	if handleError(w, err, http.StatusBadRequest, "cant create token") {
 		return
 	}
 

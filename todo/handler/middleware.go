@@ -14,6 +14,7 @@ func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
 		token, err := getTokenFromHeader(header)
 		if err != nil {
 			newErrorResponse(w, err.Error(), http.StatusUnauthorized, "cant get token from header")
+			return
 		}
 
 		userID, err := h.services.ParseToken(token)

@@ -20,8 +20,8 @@ import (
 //	@version		1.0
 //	@description	API for TodoList Application
 
-//	@host		localhost:8000
-//	@BasePath	/
+//	@host		localhost:8080
+//	@BasePath  /
 
 //	@securityDefinitions.apikey	ApiKeyAuth
 //	@in							header
@@ -30,11 +30,11 @@ import (
 func main() {
 	logrus.SetFormatter(new(logrus.JSONFormatter))
 	if err := initConfig(); err != nil {
-		logrus.Fatal("error init config:", err)
+		logrus.Fatalf("error init config: %v", err)
 	}
 
 	if err := godotenv.Load(); err != nil {
-		logrus.Fatal("error loading env variables:", err)
+		logrus.Fatalf("error loading env variables: %v", err)
 	}
 
 	db, err := database.NewPostgresDB(database.DBConfig{
@@ -46,14 +46,14 @@ func main() {
 		SSLMode:  viper.GetString("db.sslmode"),
 	})
 	if err != nil {
-		logrus.Fatal("Cant run DB", err)
+		logrus.Fatalf("Cant run DB: %v", err)
 	}
 	defer db.Close()
 
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {
-		port = viper.GetString("port")
-		logrus.Printf("SERVER_PORT not set, using default %s", port)
+		port = viper.GetString("server.port")
+		logrus.Infof("SERVER_PORT not set, using default %s", port)
 	}
 
 	repo := repository.NewRepository(db)
@@ -61,10 +61,16 @@ func main() {
 	h := handler.NewHandler(s)
 
 	srv := &server.Server{}
+	serverConfig := server.SrvConfig{
+		Port:              port,
+		ReadHeaderTimeout: viper.GetDuration("server.read_header_timeout"),
+		WriteTimeout:      viper.GetDuration("server.write_timeout"),
+		IdleTimeout:       viper.GetDuration("server.idle_timeout"),
+	}
 
 	go func() {
-		if err := srv.RunServer(port, h.MapRoutes()); err != nil {
-			logrus.Fatalf("cant run server: %s", err)
+		if err := srv.RunServer(serverConfig, h.MapRoutes()); err != nil {
+			logrus.Fatalf("cant run server: %v", err)
 		}
 	}()
 
@@ -78,7 +84,7 @@ func main() {
 	defer cancel()
 
 	if err := srv.ShutDown(ctx); err != nil {
-		logrus.Fatal("cant shutdown server: %s", err)
+		logrus.Fatalf("cant shutdown server: %v", err)
 	}
 
 	logrus.Println("server shutdown")

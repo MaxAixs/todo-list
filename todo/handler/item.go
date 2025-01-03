@@ -16,8 +16,13 @@ import (
 // @Failure      400      {object}  ErrorResponse
 // @Failure      401      {object}  ErrorResponse
 // @Failure      500      {object}  ErrorResponse
-// @Router       /lists/{listID}/items [post]
+// @Security     ApiKeyAuth
+// @Router       /api/lists/{listID}/items [post]
 func (h *Handler) CreateItem(w http.ResponseWriter, r *http.Request) {
+	if !checkContentType(w, r) {
+		return
+	}
+
 	userID, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
 		return
@@ -51,7 +56,8 @@ func (h *Handler) CreateItem(w http.ResponseWriter, r *http.Request) {
 // @Failure      400      {object}  ErrorResponse
 // @Failure      401      {object}  ErrorResponse
 // @Failure      500      {object}  ErrorResponse
-// @Router       /items/{itemID} [delete]
+// @Security     ApiKeyAuth
+// @Router       /api/items/{itemID} [delete]
 func (h *Handler) DeleteItem(w http.ResponseWriter, r *http.Request) {
 	userID, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
@@ -59,7 +65,7 @@ func (h *Handler) DeleteItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	itemID, err := getItemID(r)
-	if handleError(w, err, http.StatusBadRequest, "invalid list id param") {
+	if handleError(w, err, http.StatusBadRequest, "invalid item id param") {
 		return
 	}
 
@@ -81,7 +87,8 @@ func (h *Handler) DeleteItem(w http.ResponseWriter, r *http.Request) {
 // @Failure      400      {object}  ErrorResponse
 // @Failure      401      {object}  ErrorResponse
 // @Failure      500      {object}  ErrorResponse
-// @Router       /lists/{listID}/items [get]
+// @Security     ApiKeyAuth
+// @Router       /api/lists/{listID}/items [get]
 func (h *Handler) GetItems(w http.ResponseWriter, r *http.Request) {
 	userID, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
@@ -111,7 +118,8 @@ func (h *Handler) GetItems(w http.ResponseWriter, r *http.Request) {
 // @Failure      400      {object}  ErrorResponse
 // @Failure      401      {object}  ErrorResponse
 // @Failure      500      {object}  ErrorResponse
-// @Router       /items/{itemID} [get]
+// @Security     ApiKeyAuth
+// @Router       /api/items/{itemID} [get]
 func (h *Handler) GetItemById(w http.ResponseWriter, r *http.Request) {
 	userID, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
@@ -142,8 +150,13 @@ func (h *Handler) GetItemById(w http.ResponseWriter, r *http.Request) {
 // @Failure      400      {object}  ErrorResponse
 // @Failure      401      {object}  ErrorResponse
 // @Failure      500      {object}  ErrorResponse
-// @Router       /items/{itemID} [put]
+// @Security     ApiKeyAuth
+// @Router       /api/items/{itemID} [put]
 func (h *Handler) UpdateItem(w http.ResponseWriter, r *http.Request) {
+	if !checkContentType(w, r) {
+		return
+	}
+
 	userID, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
 		return

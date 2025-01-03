@@ -5,8 +5,6 @@ import (
 	"time"
 )
 
-// User represents a user model
-// swagger:model
 type User struct {
 	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name" validate:"required,min=3,max=50"`

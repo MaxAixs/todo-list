@@ -10,13 +10,20 @@ type Server struct {
 	httpServer *http.Server
 }
 
-func (s *Server) RunServer(port string, handler http.Handler) error {
+type SrvConfig struct {
+	Port              string
+	ReadHeaderTimeout time.Duration
+	WriteTimeout      time.Duration
+	IdleTimeout       time.Duration
+}
+
+func (s *Server) RunServer(cfg SrvConfig, handler http.Handler) error {
 	s.httpServer = &http.Server{
-		Addr:              ":" + port,
+		Addr:              ":" + cfg.Port,
 		Handler:           handler,
-		ReadHeaderTimeout: 10 * time.Second,
-		WriteTimeout:      10 * time.Second,
-		IdleTimeout:       120 * time.Second,
+		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
+		WriteTimeout:      cfg.WriteTimeout,
+		IdleTimeout:       cfg.IdleTimeout,
 	}
 
 	return s.httpServer.ListenAndServe()

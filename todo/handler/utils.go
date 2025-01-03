@@ -4,11 +4,22 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"io"
 	"net/http"
 	"strconv"
 )
+
+func checkContentType(w http.ResponseWriter, r *http.Request) bool {
+	if r.Header.Get("content-type") != "application/json" {
+		newErrorResponse(w, "invalid content-type", http.StatusUnsupportedMediaType, "Content-Type must be application json")
+		return false
+	}
+
+	return true
+}
 
 func getUserID(ctx context.Context) (uuid.UUID, error) {
 	userID, ok := ctx.Value("userID").(uuid.UUID)
@@ -50,10 +61,29 @@ func getItemID(r *http.Request) (int, error) {
 }
 
 func parseJSONBody(w http.ResponseWriter, r *http.Request, input interface{}) error {
-	err := json.NewDecoder(r.Body).Decode(input)
-	if err != nil {
-		handleError(w, err, http.StatusBadRequest, "invalid input body")
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(input); err != nil {
+		var syntaxError *json.SyntaxError
+		var unmarshalTypeError *json.UnmarshalTypeError
+		
+		switch {
+		case errors.As(err, &syntaxError):
+			newErrorResponse(w, err.Error(), http.StatusBadRequest, fmt.Sprintf("Invalid JSON at positon %d", syntaxError.Offset))
+
+		case errors.As(err, &unmarshalTypeError):
+			newErrorResponse(w, err.Error(), http.StatusBadRequest, fmt.Sprintf("Invalid value for field %d", unmarshalTypeError.Offset))
+
+		case errors.Is(err, io.EOF):
+			newErrorResponse(w, err.Error(), http.StatusBadRequest, "Request body cannot be empty")
+
+		default:
+			newErrorResponse(w, err.Error(), http.StatusBadRequest, "Invalid JSON")
+		}
+
 		return err
 	}
+
 	return nil
 }

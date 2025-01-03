@@ -6,8 +6,6 @@ import (
 	"net/http"
 )
 
-// SuccessResponse represents a success response
-// swagger:model
 type SuccessResponse struct {
 	Msg  string      `json:"msg"`
 	Data interface{} `json:"data"`

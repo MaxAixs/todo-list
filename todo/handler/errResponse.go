@@ -6,8 +6,6 @@ import (
 	"net/http"
 )
 
-// ErrorResponse represents an error response
-// swagger:model
 type ErrorResponse struct {
 	Error string `json:"error"`
 	Msg   string `json:"msg"`
@@ -24,7 +22,7 @@ func newErrorResponse(w http.ResponseWriter, err string, statusCode int, msg str
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		logrus.Println("failed to write JSON response:", err)
+		logrus.Printf("failed to write JSON response: %v", err)
 	}
 }
 

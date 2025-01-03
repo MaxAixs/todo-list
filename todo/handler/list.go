@@ -10,13 +10,18 @@ import (
 // @Tags         lists
 // @Accept       json
 // @Produce      json
-// @Param        input    body      todo.TodoList  true  "Todo List"
-// @Success      200      {object}  SuccessResponse
-// @Failure      400      {object}  ErrorResponse
-// @Failure      401      {object}  ErrorResponse
-// @Failure      500      {object}  ErrorResponse
-// @Router       /lists [post]
+// @Param        input  body      todo.TodoList  true  "Todo List"
+// @Success      200    {object}  SuccessResponse
+// @Failure      400    {object}  ErrorResponse
+// @Failure      401    {object}  ErrorResponse
+// @Failure      500    {object}  ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /api/lists/ [post]
 func (h *Handler) CreateList(w http.ResponseWriter, r *http.Request) {
+	if !checkContentType(w, r) {
+		return
+	}
+
 	id, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
 		return
@@ -40,12 +45,13 @@ func (h *Handler) CreateList(w http.ResponseWriter, r *http.Request) {
 // @Tags         lists
 // @Accept       json
 // @Produce      json
-// @Param        listID   path      int  true  "List ID"
-// @Success      200      {object}  SuccessResponse
-// @Failure      400      {object}  ErrorResponse
-// @Failure      401      {object}  ErrorResponse
-// @Failure      500      {object}  ErrorResponse
-// @Router       /lists/{listID} [get]
+// @Param        id   path      int  true  "List ID"
+// @Success      200  {object}  SuccessResponse
+// @Failure      400  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse
+// @Failure      500  {object}  ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /api/lists/{id} [get]
 func (h *Handler) GetList(w http.ResponseWriter, r *http.Request) {
 	userID, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
@@ -70,14 +76,19 @@ func (h *Handler) GetList(w http.ResponseWriter, r *http.Request) {
 // @Tags         lists
 // @Accept       json
 // @Produce      json
-// @Param        listID   path      int                  true  "List ID"
-// @Param        input    body      todo.UpdateListInput true  "Update List Data"
-// @Success      200      {object}  SuccessResponse
-// @Failure      400      {object}  ErrorResponse
-// @Failure      401      {object}  ErrorResponse
-// @Failure      500      {object}  ErrorResponse
-// @Router       /lists/{listID} [put]
+// @Param        id     path      int                  true  "List ID"
+// @Param        input  body      todo.UpdateListInput true  "Update List Data"
+// @Success      200    {object}  SuccessResponse
+// @Failure      400    {object}  ErrorResponse
+// @Failure      401    {object}  ErrorResponse
+// @Failure      500    {object}  ErrorResponse
+// @Security     ApiKeyAuth
+// @Router       /api/lists/{id} [put]
 func (h *Handler) UpdateList(w http.ResponseWriter, r *http.Request) {
+	if !checkContentType(w, r) {
+		return
+	}
+
 	userID, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
 		return
@@ -111,7 +122,8 @@ func (h *Handler) UpdateList(w http.ResponseWriter, r *http.Request) {
 // @Failure      400      {object}  ErrorResponse
 // @Failure      401      {object}  ErrorResponse
 // @Failure      500      {object}  ErrorResponse
-// @Router       /lists/{listID} [delete]
+// @Security     ApiKeyAuth
+// @Router       /api/lists/{id} [delete]
 func (h *Handler) DeleteList(w http.ResponseWriter, r *http.Request) {
 	userID, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {
@@ -140,7 +152,8 @@ func (h *Handler) DeleteList(w http.ResponseWriter, r *http.Request) {
 // @Failure      400      {object}  ErrorResponse
 // @Failure      401      {object}  ErrorResponse
 // @Failure      500      {object}  ErrorResponse
-// @Router       /lists [get]
+// @Security     ApiKeyAuth
+// @Router       /api/lists/ [get]
 func (h *Handler) GetAllLists(w http.ResponseWriter, r *http.Request) {
 	id, err := getUserID(r.Context())
 	if handleError(w, err, http.StatusUnauthorized, "cant get user id") {

@@ -6,6 +6,8 @@ import (
 	"todo-list/todo/repository"
 )
 
+//go:generate mockgen -source=service.go -destination=mocks/mockAuth.go
+
 type Authorization interface {
 	AuthUser(user todo.User) (uuid.UUID, error)
 	GenerateToken(email, password string) (string, error)
