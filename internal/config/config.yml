@@ -1,0 +1,13 @@
+server:
+  port: "8080"
+  read_header_timeout: 10s
+  write_timeout: 10s
+  idle_timeout: 120s
+
+db:
+  username: "postgres"
+  host: "localhost"
+  port: "5433"
+  dbname: "postgres"
+  sslmode: "disable"
+
