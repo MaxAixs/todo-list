@@ -1,13 +1,13 @@
 server:
-  port: "8080"
+  port: "8082"
   read_header_timeout: 10s
   write_timeout: 10s
   idle_timeout: 120s
 
 db:
   username: "postgres"
-  host: "localhost"
-  port: "5433"
-  dbname: "postgres"
+  host: "todo-db"
+  port: "5432"
+  dbname: "todo_db"
   sslmode: "disable"
 
