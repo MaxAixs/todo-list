@@ -20,9 +20,10 @@ CREATE TABLE todo_lists (
 
 CREATE TABLE todo_items (
     id SERIAL NOT NULL UNIQUE,
+    user_id UUID NOT NULL ,
     description VARCHAR(255),
     done BOOLEAN NOT NULL DEFAULT FALSE,
-    due_date TIMESTAMP NOT NULL DEFAULT NOW(),
+    due_date TIMESTAMP,
     priority INT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
