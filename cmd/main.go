@@ -6,11 +6,14 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"log"
 	"os"
 	"os/signal"
 	"time"
 	"todo-list/cmd/server"
 	"todo-list/pkg/database"
+	notifyServices "todo-list/pkg/notifyService/service"
+	"todo-list/pkg/notifyService/worker"
 	"todo-list/todo/handler"
 	"todo-list/todo/repository"
 	"todo-list/todo/service"
@@ -49,6 +52,7 @@ func main() {
 		logrus.Fatalf("Cant run DB: %v", err)
 	}
 	defer db.Close()
+	log.Printf("init db on %s", viper.GetString("db.host"))
 
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {
@@ -68,6 +72,8 @@ func main() {
 		IdleTimeout:       viper.GetDuration("server.idle_timeout"),
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	go func() {
 		if err := srv.RunServer(serverConfig, h.MapRoutes()); err != nil {
 			logrus.Fatalf("cant run server: %v", err)
@@ -76,18 +82,31 @@ func main() {
 
 	logrus.Println("server started")
 
+	notifierService := notifyServices.NewNotifyService("http://notification-service:8081/notify")
+	deadlineWorker := worker.NewDeadlineWorker(repo, notifierService)
+
+	go func() {
+		if err := deadlineWorker.Start(ctx); err != nil {
+			logrus.Fatalf("cant start deadline worker: %v", err)
+		}
+	}()
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
 	<-quit
+	logrus.Println("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	cancel()
 
-	if err := srv.ShutDown(ctx); err != nil {
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+
+	if err := srv.ShutDown(shutdownCtx); err != nil {
 		logrus.Fatalf("cant shutdown server: %v", err)
 	}
 
 	logrus.Println("server shutdown")
+
 }
 
 func initConfig() error {
