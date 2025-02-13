@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"todo-list/todo"
 )
@@ -38,6 +39,7 @@ func (h *Handler) CreateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logrus.Printf("UserID: %v", userID)
 	itemID, err := h.services.TodoItem.CreateItem(userID, listID, input)
 	if handleError(w, err, http.StatusInternalServerError, "create item failed") {
 		return

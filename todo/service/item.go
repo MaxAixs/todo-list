@@ -23,7 +23,7 @@ func (i *ItemService) CreateItem(userID uuid.UUID, listID int, item todo.TodoIte
 		return 0, errors.New("list doesn't exist or does not belong to user")
 	}
 
-	return i.repo.CreateItem(listID, item)
+	return i.repo.CreateItem(listID, userID, item)
 }
 
 func (i *ItemService) DeleteItemById(userID uuid.UUID, itemID int) error {

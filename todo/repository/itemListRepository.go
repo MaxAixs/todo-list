@@ -15,7 +15,7 @@ func NewListItemRepository(db *sql.DB) *ListItemRepository {
 	return &ListItemRepository{db: db}
 }
 
-func (l *ListItemRepository) CreateItem(todoID int, todoItems todo.TodoItem) (int, error) {
+func (l *ListItemRepository) CreateItem(todoID int, userID uuid.UUID, todoItems todo.TodoItem) (int, error) {
 	tx, err := l.db.Begin()
 	if err != nil {
 		return 0, err
@@ -23,17 +23,19 @@ func (l *ListItemRepository) CreateItem(todoID int, todoItems todo.TodoItem) (in
 	defer tx.Rollback()
 
 	var itemID int
-	createItemQuery := `INSERT INTO todo_items (description,done) VALUES ($1, $2) returning id`
-	row := tx.QueryRow(createItemQuery, todoItems.Description, todoItems.Done)
+	createItemQuery := `INSERT INTO todo_items (description, done, due_date, user_id) 
+                         VALUES ($1, $2, $3, $4) 
+                         returning id`
+	row := tx.QueryRow(createItemQuery, todoItems.Description, todoItems.Done, todoItems.DueDate, userID)
 	err = row.Scan(&itemID)
 	if err != nil {
-		return 0, fmt.Errorf("cant create todo_items %w", err)
+		return 0, fmt.Errorf("can't create todo_items: %w", err)
 	}
 
 	createListItemQuery := `INSERT INTO list_items (todo_id, item_id) VALUES ($1, $2)`
 	_, err = tx.Exec(createListItemQuery, todoID, itemID)
 	if err != nil {
-		return 0, fmt.Errorf("cant create list_items %w", err)
+		return 0, fmt.Errorf("can't create list_items: %w", err)
 	}
 
 	return itemID, tx.Commit()
