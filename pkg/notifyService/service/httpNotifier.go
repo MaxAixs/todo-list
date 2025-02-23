@@ -10,16 +10,16 @@ import (
 	"todo-list/pkg/notifyService"
 )
 
-type HTTPNotifyService struct {
+type HTTPNotifyClient struct {
 	URLAddress string
 	client     http.Client
 }
 
-func NewNotifyService(url string) *HTTPNotifyService {
-	return &HTTPNotifyService{URLAddress: url, client: http.Client{}}
+func NewNotifyClient(url string) *HTTPNotifyClient {
+	return &HTTPNotifyClient{URLAddress: url, client: http.Client{}}
 }
 
-func (n *HTTPNotifyService) PushToNotifyService(users []notifyService.TaskDeadlineInfo) error {
+func (n *HTTPNotifyClient) PushToNotifyService(users []notifyService.TaskDeadlineInfo) error {
 	data, err := json.Marshal(users)
 	if err != nil {
 		return fmt.Errorf("failed marshal users data: %v", err)
@@ -32,7 +32,7 @@ func (n *HTTPNotifyService) PushToNotifyService(users []notifyService.TaskDeadli
 	return nil
 }
 
-func (n *HTTPNotifyService) doRequest(data []byte) error {
+func (n *HTTPNotifyClient) doRequest(data []byte) error {
 	req, err := http.NewRequest(http.MethodPost, n.URLAddress, bytes.NewBuffer(data))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %v", err)
