@@ -25,7 +25,7 @@ func (c *DeadlineWorker) Start(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			logrus.Println("worker shutting down")
+			logrus.Println("deadlineWorker shutting down")
 			return ctx.Err()
 
 		case <-ticker.C:
@@ -41,6 +41,8 @@ func (c *DeadlineWorker) Start(ctx context.Context) error {
 			if err := c.service.PushToNotifyService(usersWithDeadlines); err != nil {
 				return fmt.Errorf("error sending deadline to notification service: %v", err)
 			}
+
+			logrus.Info("successfully sent data to  notification service")
 		}
 	}
 }
