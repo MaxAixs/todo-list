@@ -3,8 +3,10 @@ package repository
 import (
 	"database/sql"
 	"github.com/google/uuid"
+	"todo-list/pkg/analyticsService"
+	analyticRepo "todo-list/pkg/analyticsService/repository"
 	"todo-list/pkg/notifyService"
-	"todo-list/pkg/notifyService/repository"
+	notifyRepo "todo-list/pkg/notifyService/repository"
 	"todo-list/todo"
 )
 
@@ -33,11 +35,16 @@ type Notifier interface {
 	GetDeadlineItems() ([]notifyService.TaskDeadlineInfo, error)
 }
 
+type Analytic interface {
+	GetUsersWithDoneItem() ([]analyticsService.TaskDoneItem, error)
+}
+
 type Repository struct {
 	Authorization
 	TodoList
 	ItemList
 	Notifier
+	Analytic
 }
 
 func NewRepository(db *sql.DB) *Repository {
@@ -45,6 +52,7 @@ func NewRepository(db *sql.DB) *Repository {
 		Authorization: NewAuthRepository(db),
 		TodoList:      NewTodoListRepository(db),
 		ItemList:      NewListItemRepository(db),
-		Notifier:      repository.NewDeadRepo(db),
+		Notifier:      notifyRepo.NewDeadRepo(db),
+		Analytic:      analyticRepo.NewAnalyticRepo(db),
 	}
 }
