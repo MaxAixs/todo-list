@@ -11,6 +11,9 @@ import (
 	"os/signal"
 	"time"
 	"todo-list/cmd/server"
+	"todo-list/internal/config"
+	analyticsService "todo-list/pkg/analyticsService/service"
+	analyticworker "todo-list/pkg/analyticsService/worker"
 	"todo-list/pkg/database"
 	notifyServices "todo-list/pkg/notifyService/service"
 	"todo-list/pkg/notifyService/worker"
@@ -32,7 +35,8 @@ import (
 
 func main() {
 	logrus.SetFormatter(new(logrus.JSONFormatter))
-	if err := initConfig(); err != nil {
+
+	if err := config.InitCfg(); err != nil {
 		logrus.Fatalf("error init config: %v", err)
 	}
 
@@ -54,19 +58,13 @@ func main() {
 	defer db.Close()
 	log.Printf("init db on %s", viper.GetString("db.host"))
 
-	port := os.Getenv("SERVER_PORT")
-	if port == "" {
-		port = viper.GetString("server.port")
-		logrus.Infof("SERVER_PORT not set, using default %s", port)
-	}
-
 	repo := repository.NewRepository(db)
 	s := service.NewService(repo)
 	h := handler.NewHandler(s)
 
 	srv := &server.Server{}
 	serverConfig := server.SrvConfig{
-		Port:              port,
+		Port:              config.GetPort(),
 		ReadHeaderTimeout: viper.GetDuration("server.read_header_timeout"),
 		WriteTimeout:      viper.GetDuration("server.write_timeout"),
 		IdleTimeout:       viper.GetDuration("server.idle_timeout"),
@@ -82,12 +80,26 @@ func main() {
 
 	logrus.Println("server started")
 
-	notifierService := notifyServices.NewNotifyService("http://notification-service:8081/notify")
-	deadlineWorker := worker.NewDeadlineWorker(repo, notifierService)
+	notifierClient := notifyServices.NewNotifyClient(viper.GetString("notification.address"))
+	deadlineWorker := worker.NewDeadlineWorker(repo, notifierClient)
 
 	go func() {
 		if err := deadlineWorker.Start(ctx); err != nil {
 			logrus.Fatalf("cant start deadline worker: %v", err)
+		}
+	}()
+
+	analyticClient, err := analyticsService.NewAnalyticsClient(viper.GetString("analytics.grpc_port"))
+	if err != nil {
+		logrus.Printf("Can't create analytics client: %v", err)
+	}
+	defer analyticClient.CloseConn()
+
+	analyticWorker := analyticworker.NewAnalyticWorker(repo, analyticClient)
+
+	go func() {
+		if err := analyticWorker.Start(ctx); err != nil {
+			logrus.Fatalf("cant start analytics worker: %v", err)
 		}
 	}()
 
@@ -107,11 +119,4 @@ func main() {
 
 	logrus.Println("server shutdown")
 
-}
-
-func initConfig() error {
-	viper.AddConfigPath("internal/config")
-	viper.SetConfigName("config")
-
-	return viper.ReadInConfig()
 }
