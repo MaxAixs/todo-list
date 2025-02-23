@@ -11,3 +11,8 @@ db:
   dbname: "todo_db"
   sslmode: "disable"
 
+analytics:
+  grpc_port: "analytics-service:50051"
+
+notification:
+  address: "http://notification-service:8081/notify"
