@@ -19,11 +19,11 @@ func (d *DeadLineRepo) GetDeadlineItems() ([]notifyService.TaskDeadlineInfo, err
 
 	query := `
 		UPDATE todo_items ti
-		SET sent_deadline = true
+		SET sent_notify = true
 		FROM users u
 		WHERE ti.user_id = u.id
 		AND ti.due_date BETWEEN NOW() AND NOW() + INTERVAL '5 minutes'
-		AND ti.sent_deadline = false
+		AND ti.sent_notify = false
 		RETURNING u.email, ti.user_id, ti.id AS item_id, ti.description;
 	`
 

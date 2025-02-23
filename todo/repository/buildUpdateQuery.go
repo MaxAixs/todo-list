@@ -55,6 +55,11 @@ func buildItemUpdateSet(userID uuid.UUID, itemID int, input todo.UpdateItemInput
 		setValues = append(setValues, fmt.Sprintf("done = $%d", argId))
 		args = append(args, *input.Done)
 		argId++
+
+		if *input.Done == true {
+			setValues = append(setValues, "created_at = NOW()")
+		}
+
 	}
 
 	if input.DueDate != nil {
