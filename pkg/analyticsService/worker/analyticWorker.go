@@ -19,7 +19,7 @@ func NewAnalyticWorker(repo *repository.Repository, gRPCClient service.Analytics
 }
 
 func (a *AnalyticWorker) Start(ctx context.Context) error {
-	ticker := time.NewTicker(2 * time.Minute)
+	ticker := time.NewTicker(60 * time.Minute)
 	defer ticker.Stop()
 
 	for {
@@ -36,14 +36,11 @@ func (a *AnalyticWorker) Start(ctx context.Context) error {
 
 			if len(usersWithCompletedTasks) > 0 {
 				logrus.Printf("analyticWorker got users %v with completed tasks", len(usersWithCompletedTasks))
-			}
 
-			if err := a.gRPCClient.SendDoneItems(usersWithCompletedTasks); err != nil {
-				return fmt.Errorf("error sending data to analytics service: %w", err)
+				if err := a.gRPCClient.SendDoneItems(usersWithCompletedTasks); err != nil {
+					return fmt.Errorf("error sending data to analytics service: %w", err)
+				}
 			}
-
-			logrus.Info("successfully sent data to analytics service")
 		}
 	}
-
 }
