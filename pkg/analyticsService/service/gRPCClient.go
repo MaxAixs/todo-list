@@ -20,7 +20,7 @@ type AnalyticsClient struct {
 func NewAnalyticsClient(port string) (*AnalyticsClient, error) {
 	conn, err := grpc.NewClient(port, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, fmt.Errorf("did not connect to analytics server: %v", err)
+		return nil, fmt.Errorf("NewAnalyticsClient: %v", err)
 	}
 
 	gRPCClient := api.NewAnalyticsDataClient(conn)

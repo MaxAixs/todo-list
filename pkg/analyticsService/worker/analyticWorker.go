@@ -11,10 +11,10 @@ import (
 
 type AnalyticWorker struct {
 	repo       *repository.Repository
-	gRPCClient service.AnalyticsGrpcService
+	gRPCClient service.AnalyticsGrpcClient
 }
 
-func NewAnalyticWorker(repo *repository.Repository, gRPCClient service.AnalyticsGrpcService) *AnalyticWorker {
+func NewAnalyticWorker(repo *repository.Repository, gRPCClient service.AnalyticsGrpcClient) *AnalyticWorker {
 	return &AnalyticWorker{repo: repo, gRPCClient: gRPCClient}
 }
 
